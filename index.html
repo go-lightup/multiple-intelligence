@@ -9,7 +9,13 @@
         h1 { color: #2d3748; font-size: 2.2rem; margin-bottom: 10px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         label { display: block; margin-bottom: 5px; color: #4a5568; font-weight: bold; }
-        input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* 라디오 버튼 스타일 */
+        .radio-group { display: flex; gap: 20px; margin: 10px 0 20px 0; justify-content: center; }
+        .radio-option { display: flex; align-items: center; cursor: pointer; font-size: 1.1rem; color: #4a5568; }
+        .radio-option input { margin-right: 8px; width: auto; cursor: pointer; }
+
         button { width: 100%; background-color: #48bb78; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
         button:disabled { background-color: #cbd5e0; cursor: not-allowed; }
         #message { margin-top: 20px; font-weight: bold; min-height: 3em; line-height: 1.5; }
@@ -21,18 +27,31 @@
 
 <div class="container">
     <h1>선우의 놀이방</h1>
-    <p id="sub-title">입장 정보를 입력해 주세요</p>
+    <p>입장 정보를 입력해 주세요</p>
 
     <form id="notifyForm" action="https://formsubmit.co/bigdaddygo@naver.com" method="POST" style="display:none;">
         <input type="hidden" name="_subject" value="[선우의 놀이방] 새로운 입장 알림!">
         <input type="hidden" name="_captcha" value="false">
         <input type="text" name="visitor_name" id="hidden_name">
-        <input type="text" name="status" value="정식 비밀번호로 입장 성공">
+        <input type="text" name="entry_type" id="hidden_type">
+        <input type="text" name="status" value="인증 성공">
     </form>
 
     <div class="input-group">
         <label>이름</label>
         <input type="text" id="nameInput" placeholder="이름을 입력하세요">
+    </div>
+
+    <div class="input-group">
+        <label>입장 유형</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" name="entryType" value="무료입장" checked> 무료입장
+            </label>
+            <label class="radio-option">
+                <input type="radio" name="entryType" value="유료입장"> 유료입장
+            </label>
+        </div>
     </div>
     
     <div class="input-group">
@@ -51,6 +70,7 @@
     function handleEntry() {
         const name = document.getElementById('nameInput').value.trim();
         const pw = document.getElementById('pwInput').value;
+        const entryType = document.querySelector('input[name="entryType"]:checked').value;
         const message = document.getElementById('message');
 
         if (!name) {
@@ -62,33 +82,8 @@
         if (failCount >= 3) return;
 
         if (pw === CORRECT_PW) {
-            // 1. 성공 메시지 표시
-            message.innerHTML = `🎉 반가워요, ${name}님!<br>놀이방에 입장하세요.`;
+            message.innerHTML = `🎉 반가워요, ${name}님!<br>${entryType}으로 놀이방에 입장합니다.`;
             message.className = "success";
             
-            // 2. 알림 메일 발송 (폼 제출)
-            document.getElementById('hidden_name').value = name;
-            document.getElementById('notifyForm').submit();
-
-            // 3. 입력창 비활성화
-            document.getElementById('nameInput').disabled = true;
-            document.getElementById('pwInput').disabled = true;
-            document.getElementById('entryBtn').disabled = true;
-        } else {
-            // 실패 처리
-            failCount++;
-            document.getElementById('pwInput').value = "";
-            if (failCount >= 3) {
-                message.innerHTML = "🚫 입장을 할 수 없습니다.<br>(비밀번호 3회 오류)";
-                message.className = "error";
-                document.getElementById('entryBtn').disabled = true;
-            } else {
-                message.innerHTML = `다시 시도해 주세요. (${failCount}/3)<br>3회 이상 틀리면 입장이 제한됩니다.`;
-                message.className = "error";
-            }
-        }
-    }
-</script>
-
-</body>
-</html>
+            // 이메일 전송 폼 데이터 채우기
+            document.getElementById
