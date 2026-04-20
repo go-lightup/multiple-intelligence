@@ -3,122 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e.star - 예약 결제</title>
+    <title>개미 사육장</title>
     <style>
-        /* 안전한 기본 폰트 설정 */
         body {
             margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0f0f0f;
-            color: white;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            background: radial-gradient(circle, #1a1a2e 0%, #000 100%);
+            color: white;
+            font-family: 'Apple SD Gothic Neo', sans-serif;
+            overflow: hidden;
+            text-align: center;
         }
+
+        /* 디즈니+ 스타일 인트로 */
+        #intro {
+            font-size: 3rem;
+            letter-spacing: 8px;
+            font-weight: bold;
+            background: linear-gradient(to right, #fff, #4ebfff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: disneyZoom 3s ease-in-out forwards;
+        }
+
+        .hidden { display: none !important; }
 
         .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        input {
+            display: block;
+            width: 200px;
+            padding: 10px;
+            margin: 10px auto;
+            border-radius: 5px;
+            border: none;
             text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #888;
-            margin-bottom: 20px;
-        }
-
-        .price-card {
-            background: linear-gradient(145deg, #1e1e1e, #121212);
-            border: 1px solid #333;
-            border-radius: 30px;
-            padding: 40px 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-        }
-
-        .price-label {
             font-size: 1.1rem;
-            color: #aaa;
-            margin-bottom: 10px;
         }
 
-        .price-value {
-            font-size: 3.5rem;
-            font-weight: 800;
-            color: #fff;
-            margin: 10px 0;
-        }
-
-        .price-value span {
-            font-size: 1.5rem;
-            font-weight: 400;
-            color: #ffcc00;
-            margin-left: 5px;
-        }
-
-        .benefit-list {
-            list-style: none;
-            padding: 0;
-            margin: 25px 0;
-            color: #ddd;
-            font-size: 0.95rem;
-            line-height: 1.8;
-            text-align: left;
-            display: inline-block;
-        }
-
-        .cta-button {
-            background: #3366ff;
+        button {
+            padding: 10px 30px;
+            background: #0072d2;
             color: white;
             border: none;
-            padding: 18px 40px;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            width: 100%;
+            border-radius: 5px;
             cursor: pointer;
-            transition: 0.3s;
+            font-size: 1rem;
         }
 
-        .cta-button:hover {
-            background: #5585ff;
-        }
+        #point-display { color: #ffd700; font-weight: bold; margin-bottom: 20px; }
+        #timer { color: #ff4d4d; font-weight: bold; margin-top: 10px; }
 
-        .cancel-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-            font-size: 0.9rem;
+        @keyframes disneyZoom {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.1); opacity: 0; visibility: hidden; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="logo">e.star Premium</div>
+    <div id="intro">개미 사육장</div>
 
-        <div class="price-card">
-            <div class="price-label">무제한 소통 패스</div>
-            <div class="price-value">3,000<span>원 / 1일</span></div>
-            
-            <ul class="benefit-list">
-                <li>• 실시간 유튜버 1:1 예약권</li>
-                <li>• 궁금증 질문 우선 답변권</li>
-                <li>• 프라이빗 커뮤니티 입장</li>
-            </ul>
-
-            <button class="cta-button" onclick="location.href='processPayment.html'">
-                지금 예약하기
-            </button>
-        </div>
-
-        <a href="#" class="cancel-link" onclick="history.back()">뒤로 가기</a>
+    <div id="login-screen" class="container hidden">
+        <h2>보안 시스템</h2>
+        <div id="point-display">보유 포인트: <span id="points">0</span></div>
+        <input type="password" id="pw1" placeholder="첫 번째 비밀번호">
+        <input type="password" id="pw2" placeholder="두 번째 비밀번호">
+        <button id="check-btn" onclick="verify()">확인</button>
+        <div id="timer"></div>
     </div>
 
+    <div id="entry-screen" class="container hidden">
+        <h1 style="color:#00ff88">비밀번호 일치!</h1>
+        <p>포인트가 <span style="color:#ffd700">4+</span> 충전되었습니다.</p>
+        <p>입장하려면 2포인트가 필요합니다.</p>
+        <button onclick="usePointAndEnter()">2포인트 내고 입장하기</button>
+    </div>
+
+    <div id="final-screen" class="container hidden">
+        <h1 style="font-size: 3rem;">입장하시오.</h1>
+        <p>🐜 개미 사육장에 접속되었습니다.</p>
+    </div>
+
+    <script>
+        let points = 0;
+        let isLocked = false;
+
+        // 인트로 후 로그인창 등장
+        setTimeout(() => {
+            document.getElementById('intro').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }, 3000);
+
+        function verify() {
+            if (isLocked) return;
+
+            const p1 = document.getElementById('pw1').value;
+            const p2 = document.getElementById('pw2').value;
+            const timerMsg = document.getElementById('timer');
+
+            if (p1 === '2288' && p2 === '1987') {
+                // 성공 로직
+                points += 4;
+                updatePoints();
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('entry-screen').classList.remove('hidden');
+            } else {
+                // 실패 로직
+                points -= 2;
+                updatePoints();
+                lockSystem(120); // 120초(2분) 락
+            }
+        }
+
+        function updatePoints() {
+            document.getElementById('points').innerText = points;
+        }
+
+        function lockSystem(seconds) {
+            isLocked = true;
+            const btn = document.getElementById('check-btn');
+            const timerMsg = document.getElementById('timer');
+            btn.disabled = true;
+
+            let remaining = seconds;
+            const interval = setInterval(() => {
+                const min = Math.floor(remaining / 60);
+                const sec = remaining % 60;
+                timerMsg.innerText = `틀렸습니다! -2포인트. 락 해제까지: ${min}분 ${sec}초`;
+                
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    isLocked = false;
+                    btn.disabled = false;
+                    timerMsg.innerText = "";
+                }
+                remaining--;
+            }, 1000);
+        }
+
+        function usePointAndEnter() {
+            if (points >= 2) {
+                points -= 2;
+                updatePoints();
+                document.getElementById('entry-screen').classList.add('hidden');
+                document.getElementById('final-screen').classList.remove('hidden');
+            } else {
+                alert("포인트가 부족합니다!");
+            }
+        }
+    </script>
 </body>
 </html>
