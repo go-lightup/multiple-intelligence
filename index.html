@@ -3,164 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>개미 사육장</title>
+    <title>File Email App</title>
     <style>
+        /* 기본 배경 설정 */
         body {
             margin: 0;
-            height: 100vh;
+            padding: 0;
+            font-family: sans-serif;
+            background-color: #ffffff;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            background: radial-gradient(circle, #1a1a2e 0%, #000 100%);
+        }
+
+        /* 1. 상단 바 (이메일 앱 느낌) */
+        .top-bar {
+            width: 100%;
+            height: 60px;
+            background: #f1f3f4;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* 설정 아이콘 모양 버튼 */
+        .settings-trigger {
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            background: #5f6368;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            font-family: 'Apple SD Gothic Neo', sans-serif;
-            overflow: hidden;
-            text-align: center;
+            font-size: 20px;
         }
 
-        /* 디즈니+ 스타일 인트로 */
-        #intro {
-            font-size: 3rem;
-            letter-spacing: 8px;
-            font-weight: bold;
-            background: linear-gradient(to right, #fff, #4ebfff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: disneyZoom 3s ease-in-out forwards;
-        }
-
-        .hidden { display: none !important; }
-
+        /* 2. 중앙 컨텐츠 영역 */
         .container {
-            background: rgba(255, 255, 255, 0.1);
+            margin-top: 100px;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* APPLICATIONS 메뉴 (처음엔 숨김) */
+        #app-menu {
+            display: none; 
+            border: 2px solid #333;
             padding: 40px;
             border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            width: 300px;
+            margin: 0 auto;
+            background: #fff;
         }
 
-        input {
-            display: block;
-            width: 200px;
-            padding: 10px;
-            margin: 10px auto;
-            border-radius: 5px;
-            border: none;
-            text-align: center;
-            font-size: 1.1rem;
+        .menu-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #222;
         }
 
-        button {
-            padding: 10px 30px;
-            background: #0072d2;
-            color: white;
-            border: none;
-            border-radius: 5px;
+        /* 3. QR코드 디자인 */
+        .qr-box {
+            width: 150px;
+            height: 150px;
+            background-color: #000;
+            margin: 0 auto;
             cursor: pointer;
-            font-size: 1rem;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        .qr-box div { background: white; width: 100%; height: 100%; }
+
+        /* 4. 최종 사과 화면 (처음엔 숨김) */
+        #apple-display {
+            display: none;
+            font-size: 50px;
+            color: #ff3b30;
         }
 
-        #point-display { color: #ffd700; font-weight: bold; margin-bottom: 20px; }
-        #timer { color: #ff4d4d; font-weight: bold; margin-top: 10px; }
-
-        @keyframes disneyZoom {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: scale(1.1); opacity: 0; visibility: hidden; }
+        .html-code-block {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            text-align: left;
+            margin-top: 20px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
 
-    <div id="intro">개미 사육장</div>
-
-    <div id="login-screen" class="container hidden">
-        <h2>보안 시스템</h2>
-        <div id="point-display">보유 포인트: <span id="points">0</span></div>
-        <input type="password" id="pw1" placeholder="첫 번째 비밀번호">
-        <input type="password" id="pw2" placeholder="두 번째 비밀번호">
-        <button id="check-btn" onclick="verify()">확인</button>
-        <div id="timer"></div>
+    <div class="top-bar">
+        <div class="settings-trigger" onclick="openMenu()">⚙</div>
     </div>
 
-    <div id="entry-screen" class="container hidden">
-        <h1 style="color:#00ff88">비밀번호 일치!</h1>
-        <p>포인트가 <span style="color:#ffd700">4+</span> 충전되었습니다.</p>
-        <p>입장하려면 2포인트가 필요합니다.</p>
-        <button onclick="usePointAndEnter()">2포인트 내고 입장하기</button>
-    </div>
+    <div class="container">
+        <div id="start-guide">오른쪽 위 설정 버튼을 클릭하세요.</div>
 
-    <div id="final-screen" class="container hidden">
-        <h1 style="font-size: 3rem;">입장하시오.</h1>
-        <p>🐜 개미 사육장에 접속되었습니다.</p>
+        <div id="app-menu">
+            <div class="menu-title">APPLICATIONS</div>
+            <div class="qr-box" onclick="showResult()">
+                <div></div><div style="background:black"></div><div></div>
+                <div style="background:black"></div><div></div><div style="background:black"></div>
+                <div></div><div style="background:black"></div><div></div>
+            </div>
+            <p>인증을 위해 위 QR을 클릭하세요</p>
+        </div>
+
+        <div id="apple-display">
+            <div>🍎 APPLE</div>
+            <div class="html-code-block">
+                &lt;div class="apple-logo"&gt;<br>
+                &nbsp;&nbsp;&lt;span&gt;Apple Logic Activated&lt;/span&gt;<br>
+                &lt;/div&gt;
+            </div>
+            <button onclick="location.reload()" style="margin-top:20px;">다시 시작</button>
+        </div>
     </div>
 
     <script>
-        let points = 0;
-        let isLocked = false;
-
-        // 인트로 후 로그인창 등장
-        setTimeout(() => {
-            document.getElementById('intro').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-        }, 3000);
-
-        function verify() {
-            if (isLocked) return;
-
-            const p1 = document.getElementById('pw1').value;
-            const p2 = document.getElementById('pw2').value;
-            const timerMsg = document.getElementById('timer');
-
-            if (p1 === '2288' && p2 === '1987') {
-                // 성공 로직
-                points += 4;
-                updatePoints();
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('entry-screen').classList.remove('hidden');
-            } else {
-                // 실패 로직
-                points -= 2;
-                updatePoints();
-                lockSystem(120); // 120초(2분) 락
-            }
+        // 1. 설정 클릭 시 실행
+        function openMenu() {
+            document.getElementById('start-guide').style.display = 'none';
+            document.getElementById('app-menu').style.display = 'block';
         }
 
-        function updatePoints() {
-            document.getElementById('points').innerText = points;
-        }
-
-        function lockSystem(seconds) {
-            isLocked = true;
-            const btn = document.getElementById('check-btn');
-            const timerMsg = document.getElementById('timer');
-            btn.disabled = true;
-
-            let remaining = seconds;
-            const interval = setInterval(() => {
-                const min = Math.floor(remaining / 60);
-                const sec = remaining % 60;
-                timerMsg.innerText = `틀렸습니다! -2포인트. 락 해제까지: ${min}분 ${sec}초`;
-                
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    isLocked = false;
-                    btn.disabled = false;
-                    timerMsg.innerText = "";
-                }
-                remaining--;
-            }, 1000);
-        }
-
-        function usePointAndEnter() {
-            if (points >= 2) {
-                points -= 2;
-                updatePoints();
-                document.getElementById('entry-screen').classList.add('hidden');
-                document.getElementById('final-screen').classList.remove('hidden');
-            } else {
-                alert("포인트가 부족합니다!");
-            }
+        // 2. QR 클릭 시 실행
+        function showResult() {
+            document.getElementById('app-menu').style.display = 'none';
+            document.getElementById('apple-display').style.display = 'block';
         }
     </script>
 </body>
