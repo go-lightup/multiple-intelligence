@@ -2,148 +2,165 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Email App</title>
+    <title>POS 시스템 프로토타입</title>
     <style>
-        /* 기본 배경 설정 */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f0f0f0; }
+        .container { width: 900px; height: 600px; background: white; border: 2px solid #333; display: flex; padding: 10px; gap: 10px; }
+        
+        /* 왼쪽 영역 */
+        .left-panel { flex: 3; display: flex; flex-direction: column; gap: 10px; }
+        .section { border: 1px solid #ccc; padding: 10px; position: relative; }
+        .section-title { position: absolute; top: -12px; left: 10px; background: white; padding: 0 5px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        
+        button { border: 1px solid #333; background: white; padding: 15px 5px; cursor: pointer; font-size: 13px; min-height: 60px; }
+        button:active { background: #eee; }
 
-        /* 1. 상단 바 (이메일 앱 느낌) */
-        .top-bar {
-            width: 100%;
-            height: 60px;
-            background: #f1f3f4;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 0 20px;
-            box-sizing: border-box;
-            border-bottom: 1px solid #dee2e6;
-        }
+        .payment-methods { display: flex; gap: 10px; margin-top: auto; }
+        .payment-methods button { flex: 1; font-size: 18px; font-weight: bold; height: 80px; }
 
-        /* 설정 아이콘 모양 버튼 */
-        .settings-trigger {
-            width: 35px;
-            height: 35px;
-            cursor: pointer;
-            background: #5f6368;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        /* 2. 중앙 컨텐츠 영역 */
-        .container {
-            margin-top: 100px;
-            text-align: center;
-            width: 100%;
-        }
-
-        /* APPLICATIONS 메뉴 (처음엔 숨김) */
-        #app-menu {
-            display: none; 
-            border: 2px solid #333;
-            padding: 40px;
-            border-radius: 20px;
-            width: 300px;
-            margin: 0 auto;
-            background: #fff;
-        }
-
-        .menu-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 30px;
-            color: #222;
-        }
-
-        /* 3. QR코드 디자인 */
-        .qr-box {
-            width: 150px;
-            height: 150px;
-            background-color: #000;
-            margin: 0 auto;
-            cursor: pointer;
-            padding: 10px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-        }
-        .qr-box div { background: white; width: 100%; height: 100%; }
-
-        /* 4. 최종 사과 화면 (처음엔 숨김) */
-        #apple-display {
-            display: none;
-            font-size: 50px;
-            color: #ff3b30;
-        }
-
-        .html-code-block {
-            background: #272822;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 14px;
-            text-align: left;
-            margin-top: 20px;
-            overflow-x: auto;
-        }
+        /* 오른쪽 영역 */
+        .right-panel { flex: 2; border-left: 2px solid #333; padding-left: 10px; display: flex; flex-direction: column; }
+        .receipt { flex: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
+        .receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 2px; }
+        .totals { font-size: 18px; font-weight: bold; padding: 10px 0; }
+        
+        .numpad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .numpad button { height: 50px; font-size: 16px; }
+        
+        /* 모달 스타일 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; text-align: center; }
+        input { padding: 10px; font-size: 18px; margin: 10px 0; width: 80%; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div class="settings-trigger" onclick="openMenu()">⚙</div>
-    </div>
-
-    <div class="container">
-        <div id="start-guide">오른쪽 위 설정 버튼을 클릭하세요.</div>
-
-        <div id="app-menu">
-            <div class="menu-title">APPLICATIONS</div>
-            <div class="qr-box" onclick="showResult()">
-                <div></div><div style="background:black"></div><div></div>
-                <div style="background:black"></div><div></div><div style="background:black"></div>
-                <div></div><div style="background:black"></div><div></div>
+<div class="container">
+    <div class="left-panel">
+        <div class="section">
+            <span class="section-title">기본</span>
+            <div class="grid">
+                <button onclick="addItem('1인1박', 650000)">1인1박<br>650,000원</button>
+                <button onclick="addItem('무료+소인', 0)">무료+소인</button>
+                <button onclick="addItem('성인', 0)">성인<br>0원+</button>
+                <button onclick="addItem('객실', 200000)">객실<br>200,000원</button>
+                <button onclick="addItem('조식2시간', 26000)">조식2시간<br>26,000원</button>
+                <button onclick="addItem('워터하우스', 46000)">워터하우스<br>46,000원</button>
+                <button onclick="addDiscount(40000)">할인1<br>-40,000원</button>
+                <button onclick="addDiscount(66000)">할인2<br>-66,000원</button>
             </div>
-            <p>인증을 위해 위 QR을 클릭하세요</p>
         </div>
 
-        <div id="apple-display">
-            <div>🍎 APPLE</div>
-            <div class="html-code-block">
-                &lt;div class="apple-logo"&gt;<br>
-                &nbsp;&nbsp;&lt;span&gt;Apple Logic Activated&lt;/span&gt;<br>
-                &lt;/div&gt;
+        <div class="section">
+            <span class="section-title">코브2</span>
+            <div class="grid">
+                <button onclick="addItem('빌라시수영장', 46000)">빌라시수영장<br>(3시간) 46,000원</button>
+                <button onclick="addItem('1박1방', 750000)">1박1방<br>750,000원</button>
             </div>
-            <button onclick="location.reload()" style="margin-top:20px;">다시 시작</button>
+        </div>
+
+        <div class="payment-methods">
+            <button onclick="openModal('현금')">현금</button>
+            <button onclick="openModal('카드')">카드</button>
+            <button onclick="openModal('이체')">이체</button>
         </div>
     </div>
 
-    <script>
-        // 1. 설정 클릭 시 실행
-        function openMenu() {
-            document.getElementById('start-guide').style.display = 'none';
-            document.getElementById('app-menu').style.display = 'block';
-        }
+    <div class="right-panel">
+        <div class="receipt" id="itemList">
+            </div>
+        <div class="totals">
+            <div>합계: <span id="totalPrice">0</span>원</div>
+            <div style="color: red;">할인: <span id="totalDiscount">0</span>원</div>
+        </div>
+        
+        <div class="numpad">
+            <button onclick="numClick(1)">1</button><button onclick="numClick(2)">2</button><button onclick="numClick(3)">3</button><button>⌫</button>
+            <button onclick="numClick(4)">4</button><button onclick="numClick(5)">5</button><button onclick="numClick(6)">6</button><button>확인</button>
+            <button onclick="numClick(7)">7</button><button onclick="numClick(8)">8</button><button onclick="numClick(9)">9</button><button onclick="numClick(0)">0</button>
+        </div>
+    </div>
+</div>
 
-        // 2. QR 클릭 시 실행
-        function showResult() {
-            document.getElementById('app-menu').style.display = 'none';
-            document.getElementById('apple-display').style.display = 'block';
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle"></h2>
+        <p id="modalMsg"></p>
+        <input type="text" id="paymentInput" placeholder="입력해주세요">
+        <br>
+        <button onclick="processPayment()" style="min-height: 40px; padding: 0 20px;">확인</button>
+        <button onclick="closeModal()" style="min-height: 40px; padding: 0 20px;">취소</button>
+    </div>
+</div>
+
+<script>
+    let total = 0;
+    let discount = 0;
+    let currentMethod = '';
+
+    function addItem(name, price) {
+        const list = document.getElementById('itemList');
+        const item = document.createElement('div');
+        item.className = 'receipt-item';
+        item.innerHTML = `<span>${name}</span><span>${price.toLocaleString()}원</span>`;
+        list.appendChild(item);
+        total += price;
+        updateDisplay();
+    }
+
+    function addDiscount(amount) {
+        discount += amount;
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        document.getElementById('totalPrice').innerText = (total - discount).toLocaleString();
+        document.getElementById('totalDiscount').innerText = discount.toLocaleString();
+    }
+
+    function numClick(num) {
+        // 숫자패드로 할인액 직접 조정 (간단 예시)
+        discount = parseInt(discount.toString() + num);
+        updateDisplay();
+    }
+
+    function openModal(method) {
+        currentMethod = method;
+        const modal = document.getElementById('paymentModal');
+        const title = document.getElementById('modalTitle');
+        const msg = document.getElementById('modalMsg');
+        const input = document.getElementById('paymentInput');
+        
+        modal.style.display = 'flex';
+        input.value = '';
+
+        if(method === '현금') {
+            title.innerText = "현금 결제";
+            msg.innerText = "전화번호가 무엇입니까?";
+        } else if(method === '카드') {
+            title.innerText = "카드 결제";
+            msg.innerText = "카드 번호가 무엇입니까?";
+        } else {
+            title.innerText = "계좌 이체";
+            msg.innerText = "계좌번호: 123-456-789 (은행명)\n보내실 금액을 입력하세요.";
         }
-    </script>
+    }
+
+    function closeModal() {
+        document.getElementById('paymentModal').style.display = 'none';
+    }
+
+    function processPayment() {
+        const val = document.getElementById('paymentInput').value;
+        if(!val && currentMethod !== '이체') {
+            alert("번호를 입력해주세요.");
+            return;
+        }
+        alert("결제가 완료되었습니다.");
+        location.reload(); // 초기화
+    }
+</script>
+
 </body>
 </html>
