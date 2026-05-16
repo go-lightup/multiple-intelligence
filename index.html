@@ -1,166 +1,470 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <title>POS 시스템 프로토타입</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJON - 로켓 쇼핑 & 초고속 슬라이드 결제 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f0f0f0; }
-        .container { width: 900px; height: 600px; background: white; border: 2px solid #333; display: flex; padding: 10px; gap: 10px; }
-        
-        /* 왼쪽 영역 */
-        .left-panel { flex: 3; display: flex; flex-direction: column; gap: 10px; }
-        .section { border: 1px solid #ccc; padding: 10px; position: relative; }
-        .section-title { position: absolute; top: -12px; left: 10px; background: white; padding: 0 5px; font-weight: bold; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        
-        button { border: 1px solid #333; background: white; padding: 15px 5px; cursor: pointer; font-size: 13px; min-height: 60px; }
-        button:active { background: #eee; }
-
-        .payment-methods { display: flex; gap: 10px; margin-top: auto; }
-        .payment-methods button { flex: 1; font-size: 18px; font-weight: bold; height: 80px; }
-
-        /* 오른쪽 영역 */
-        .right-panel { flex: 2; border-left: 2px solid #333; padding-left: 10px; display: flex; flex-direction: column; }
-        .receipt { flex: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
-        .receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 2px; }
-        .totals { font-size: 18px; font-weight: bold; padding: 10px 0; }
-        
-        .numpad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-        .numpad button { height: 50px; font-size: 16px; }
-        
-        /* 모달 스타일 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; text-align: center; }
-        input { padding: 10px; font-size: 18px; margin: 10px 0; width: 80%; }
+        /* 네이버페이/토스 스타일의 부드러운 슬라이더 커스텀 */
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #0073e6;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: background 0.1s, transform 0.1s;
+        }
+        .slider-thumb::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            background: #005bb5;
+            transform: scale(0.95);
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #0073e6;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            border: none;
+        }
     </style>
 </head>
-<body>
+<body class="bg-neutral-950 text-neutral-200 font-sans min-h-full flex flex-col justify-between overflow-x-hidden">
 
-<div class="container">
-    <div class="left-panel">
-        <div class="section">
-            <span class="section-title">기본</span>
-            <div class="grid">
-                <button onclick="addItem('1인1박', 650000)">1인1박<br>650,000원</button>
-                <button onclick="addItem('무료+소인', 0)">무료+소인</button>
-                <button onclick="addItem('성인', 0)">성인<br>0원+</button>
-                <button onclick="addItem('객실', 200000)">객실<br>200,000원</button>
-                <button onclick="addItem('조식2시간', 26000)">조식2시간<br>26,000원</button>
-                <button onclick="addItem('워터하우스', 46000)">워터하우스<br>46,000원</button>
-                <button onclick="addDiscount(40000)">할인1<br>-40,000원</button>
-                <button onclick="addDiscount(66000)">할인2<br>-66,000원</button>
+    <!-- HEADER -->
+    <header class="bg-[#111111] border-b border-neutral-800 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <button id="menuBtn" class="p-2 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <h1 class="text-xl font-black tracking-tight text-[#0073e6] cursor-pointer" onclick="switchPage('sopang')">EJON<span class="text-[#00b0f0] text-xs font-bold ml-1">로켓</span></h1>
+            
+            <div class="relative p-2 cursor-pointer hover:bg-neutral-800 rounded-lg flex items-center" onclick="openCartView()">
+                <i data-lucide="shopping-cart" class="w-6 h-6 text-neutral-400 hover:text-white"></i>
+                <span id="cartCount" class="absolute -top-1 -right-1 bg-[#258bf7] text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
             </div>
-        </div>
-
-        <div class="section">
-            <span class="section-title">코브2</span>
-            <div class="grid">
-                <button onclick="addItem('빌라시수영장', 46000)">빌라시수영장<br>(3시간) 46,000원</button>
-                <button onclick="addItem('1박1방', 750000)">1박1방<br>750,000원</button>
-            </div>
-        </div>
-
-        <div class="payment-methods">
-            <button onclick="openModal('현금')">현금</button>
-            <button onclick="openModal('카드')">카드</button>
-            <button onclick="openModal('이체')">이체</button>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <div class="receipt" id="itemList">
-            </div>
-        <div class="totals">
-            <div>합계: <span id="totalPrice">0</span>원</div>
-            <div style="color: red;">할인: <span id="totalDiscount">0</span>원</div>
         </div>
         
-        <div class="numpad">
-            <button onclick="numClick(1)">1</button><button onclick="numClick(2)">2</button><button onclick="numClick(3)">3</button><button>⌫</button>
-            <button onclick="numClick(4)">4</button><button onclick="numClick(5)">5</button><button onclick="numClick(6)">6</button><button>확인</button>
-            <button onclick="numClick(7)">7</button><button onclick="numClick(8)">8</button><button onclick="numClick(9)">9</button><button onclick="numClick(0)">0</button>
+        <!-- SIDEBAR MENU -->
+        <div id="sidebarMenu" class="hidden absolute top-full left-0 w-60 bg-[#111111] border-r border-b border-neutral-800 shadow-2xl p-2 space-y-1 z-50">
+            <button onclick="switchPage('sopang')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-neutral-800 text-sm flex items-center gap-2"><i data-lucide="store" class="w-4 h-4 text-[#00b0f0]"></i> Sopang 쇼핑몰</button>
+            <button onclick="switchPage('reserve')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-neutral-800 text-sm flex items-center gap-2"><i data-lucide="calendar-check" class="w-4 h-4 text-emerald-400"></i> 회원 예약 신청</button>
+            <button onclick="switchPage('qast')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-neutral-800 text-sm flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4 text-[#00b0f0]"></i> Again Qast 문의</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4">
+        
+        <!-- PAGE 1: SOPANG SHOPPING -->
+        <section id="pageSopang" class="space-y-4">
+            <!-- DISCOUNT COUPON BANNER -->
+            <div id="couponBanner" class="bg-gradient-to-r from-[#0052b4] to-[#00b0f0] rounded-xl p-3 flex items-center justify-between shadow-lg">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="ticket" class="w-5 h-5 text-yellow-300 animate-bounce"></i>
+                    <div>
+                        <h4 class="text-xs font-black text-white">EJON 오픈기념 대박 세일 쿠폰</h4>
+                        <p class="text-[10px] text-blue-100">조건 없이 즉시 사용 가능한 결제 할인 쿠폰</p>
+                    </div>
+                </div>
+                <button id="downloadCouponBtn" onclick="downloadCoupon()" class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-black text-[11px] px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+                    <span id="couponBtnText">최대 5,000원 받기</span>
+                </button>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="flex gap-1 overflow-x-auto pb-2 border-b border-neutral-800 sticky top-[57px] bg-neutral-950 z-40">
+                <button onclick="filterCat('all')" class="cat-btn bg-[#0073e6] text-white px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap">전체</button>
+                <button onclick="filterCat('fruit')" class="cat-btn bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded text-xs whitespace-nowrap">과일 선생</button>
+                <button onclick="filterCat('snack')" class="cat-btn bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded text-xs whitespace-nowrap">간식</button>
+                <button onclick="filterCat('baby')" class="cat-btn bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded text-xs whitespace-nowrap">이유식</button>
+                <button onclick="filterCat('etc')" class="cat-btn bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded text-xs whitespace-nowrap">기타</button>
+            </div>
+            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+        </section>
+
+        <!-- PAGE 2: MEMBER RESERVATION -->
+        <section id="pageReserve" class="hidden max-w-md mx-auto bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4 my-4">
+            <div class="border-b border-neutral-800 pb-2">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="user-plus" class="text-emerald-400"></i> 프리미엄 회원 예약</h2>
+                <p class="text-xs text-neutral-400 mt-1">안전한 일회성 보안 세션으로 예약 정보를 입력받습니다.</p>
+            </div>
+            <form id="reserveForm" onsubmit="submitReservation(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">이메일 주소</label>
+                    <input type="email" required placeholder="example@ejon.com" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">생년월일 (8자리)</label>
+                    <input type="text" required maxlength="8" placeholder="19900101" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">주민등록번호 (보안 처리됨)</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" required maxlength="6" placeholder="******" class="w-1/2 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-center text-white focus:outline-none focus:border-emerald-500">
+                        <span class="text-neutral-600">-</span>
+                        <input type="password" required maxlength="7" placeholder="*******" class="w-1/2 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-center text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">전화번호</label>
+                    <input type="tel" required placeholder="010-1234-5678" class="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg transition mt-4">예약 확인 및 등록</button>
+            </form>
+            <div id="reserveSuccessCard" class="hidden bg-emerald-950/40 border border-emerald-500/30 p-4 rounded-xl text-center space-y-1">
+                <p class="text-emerald-400 font-bold text-base">🎉 회원이 완료되었습니다.</p>
+                <p class="text-neutral-400 text-xs">EJON 로켓 멤버십 가입을 환영합니다!</p>
+            </div>
+        </section>
+
+        <!-- PAGE 3: AGAIN QAST -->
+        <section id="pageQast" class="hidden max-w-2xl mx-auto space-y-4 pt-4">
+            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4 h-64 overflow-y-auto text-sm">
+                <div class="bg-neutral-800 rounded-lg p-2.5 max-w-[80%] inline-block">안녕하세요! EJON 무엇이든 물어보세요.</div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" placeholder="궁금한 내용을 입력하세요..." class="flex-grow bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0073e6]">
+                <button class="bg-[#0073e6] hover:bg-[#0062c4] text-white px-4 py-2 rounded-lg text-sm font-bold">전송</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- BOTTOM EXPANDABLE CART & PAY DRAWER -->
+    <div id="cartDrawer" class="fixed bottom-0 inset-x-0 bg-[#111111] border-t border-neutral-800 z-50 transform translate-y-full transition-transform duration-300 shadow-2xl rounded-t-2xl max-w-xl mx-auto hidden">
+        <div class="p-4 space-y-4">
+            
+            <!-- 결제창 헤더 (닫기 버튼 작동 보강) -->
+            <div class="flex justify-between items-center border-b border-neutral-800 pb-3">
+                <div class="flex items-center gap-1.5">
+                    <i data-lucide="credit-card" class="text-[#00b0f0] w-4 h-4"></i>
+                    <h3 class="font-bold text-white text-sm">EJON 로켓페이 결제창</h3>
+                </div>
+                <!-- 고정밀 클릭 수정을 적용한 강력한 X 버튼 -->
+                <button id="closeCartBtn" onclick="closeCartView()" class="w-9 h-9 flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-full transition shadow-inner z-50" aria-label="결제창 닫기">
+                    <i data-lucide="x" class="w-5 h-5 pointer-events-none"></i>
+                </button>
+            </div>
+            
+            <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded flex items-center justify-center font-black text-[9px] italic tracking-wider text-white">WOW</div>
+                    <div>
+                        <p class="text-xs font-bold text-white">EJON 우리카드 (스피드원클릭)</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-neutral-500"></i>
+            </div>
+
+            <!-- DYNAMIC COUPON SELECTOR -->
+            <div id="drawerCouponSection" class="hidden bg-neutral-900 border border-neutral-800 rounded-xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="ticket" class="w-4 h-4 text-yellow-400"></i>
+                    <label for="applyCouponCheckbox" class="text-xs font-bold text-neutral-200 cursor-pointer">보유 중인 5,000원 할인쿠폰 적용하기</label>
+                </div>
+                <input type="checkbox" id="applyCouponCheckbox" onchange="toggleCouponApply()" class="w-4 h-4 rounded accent-[#0073e6] cursor-pointer">
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="space-y-1.5 text-xs text-neutral-400 px-1">
+                <div class="flex justify-between"><span>담은 상품 개수</span><span id="drawerQty" class="text-white font-bold">0개</span></div>
+                <div class="flex justify-between"><span>주문 금액</span><span id="drawerSubtotal" class="text-neutral-200">0원</span></div>
+                <div id="drawerDiscountRow" class="hidden flex justify-between text-yellow-400"><span>쿠폰 할인</span><span>-5,000원</span></div>
+                <div class="flex justify-between"><span>배송비</span><span class="text-[#00b0f0] font-bold">🚀 무료배송</span></div>
+                <div class="flex justify-between text-sm pt-1 border-t border-neutral-800 font-bold text-white">
+                    <span>최종 결제 금액</span>
+                    <span id="drawerTotal" class="text-red-500 text-base">0원</span>
+                </div>
+            </div>
+
+            <!-- HIGH-SENSITIVITY SWIPE TO PAY -->
+            <div id="swipeContainer" class="relative w-full h-14 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center overflow-hidden select-none transition-colors duration-200">
+                <div id="swipeBg" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#0062c4] to-[#0073e6] w-0 pointer-events-none transition-all duration-75"></div>
+                <span id="swipeText" class="absolute text-xs font-bold text-neutral-400 tracking-wide pointer-events-none z-10 animate-pulse">👉 오른쪽으로 밀어서 결제하기</span>
+                <input type="range" id="swipeSlider" min="0" max="100" value="0" class="slider-thumb absolute inset-0 w-full h-full appearance-none bg-transparent outline-none z-20">
+            </div>
         </div>
     </div>
-</div>
 
-<div id="paymentModal" class="modal">
-    <div class="modal-content">
-        <h2 id="modalTitle"></h2>
-        <p id="modalMsg"></p>
-        <input type="text" id="paymentInput" placeholder="입력해주세요">
-        <br>
-        <button onclick="processPayment()" style="min-height: 40px; padding: 0 20px;">확인</button>
-        <button onclick="closeModal()" style="min-height: 40px; padding: 0 20px;">취소</button>
+    <!-- FOOTER -->
+    <footer class="bg-[#111111] border-t border-neutral-800 text-neutral-500 text-[11px] p-6 space-y-3 mt-10">
+        <div class="max-w-5xl mx-auto space-y-2">
+            <div class="flex flex-wrap gap-3 text-neutral-400 font-semibold mb-1">
+                <button onclick="openModal('terms')" class="hover:underline text-left">이용약관</button>
+                <button onclick="openModal('privacy')" class="hover:underline text-[#00b0f0] text-left">개인정보처리방침</button>
+                <button onclick="openModal('wow')" class="hover:underline text-left">로켓와우 멤버십 이용약관</button>
+                <a href="#" class="hover:underline">고객센터</a>
+            </div>
+            <p class="text-[#00b0f0] font-medium border border-[#0073e6]/20 bg-[#0073e6]/5 inline-block px-2 py-0.5 rounded">
+                ⚠️ 공지: 본 서비스의 회원가입 및 개인정보 처리동의는 만 39세 이상부터 가능합니다.
+            </p>
+            <p class="leading-relaxed">
+                (주)EJON 상사 | 대표이사: 홍길동 | 서울시 강남구 테헤란로 123<br>
+                사업자등록번호: 123-45-67890 | 통신판매업신고: 제 2026-서울강남-0000호
+            </p>
+            <p class="text-neutral-600 pt-1">Copyright © EJON Corp. 2026. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- TERMS MODAL -->
+    <div id="termsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-2xl h-[70vh] flex flex-col justify-between shadow-2xl">
+            <div class="p-4 border-b border-neutral-800 flex items-center justify-between">
+                <h2 id="modalTitle" class="text-base font-bold text-white">이용약관</h2>
+                <button onclick="closeModal()" class="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="modalContent" class="p-6 overflow-y-auto space-y-4 text-xs text-neutral-400 leading-relaxed"></div>
+            <div class="p-4 border-t border-neutral-800 flex justify-end">
+                <button onclick="closeModal()" class="bg-[#0073e6] text-white text-xs font-bold px-4 py-2 rounded-lg">확인</button>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    let total = 0;
-    let discount = 0;
-    let currentMethod = '';
+    <!-- TOAST NOTIFICATION -->
+    <div id="cartToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#0073e6] text-white text-xs font-bold px-5 py-2.5 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none translate-y-2 flex items-center gap-1.5 z-50">
+        <i data-lucide="check" class="w-4 h-4"></i> <span id="toastMessage">장바구니가 담겼습니다!</span>
+    </div>
 
-    function addItem(name, price) {
-        const list = document.getElementById('itemList');
-        const item = document.createElement('div');
-        item.className = 'receipt-item';
-        item.innerHTML = `<span>${name}</span><span>${price.toLocaleString()}원</span>`;
-        list.appendChild(item);
-        total += price;
-        updateDisplay();
-    }
-
-    function addDiscount(amount) {
-        discount += amount;
-        updateDisplay();
-    }
-
-    function updateDisplay() {
-        document.getElementById('totalPrice').innerText = (total - discount).toLocaleString();
-        document.getElementById('totalDiscount').innerText = discount.toLocaleString();
-    }
-
-    function numClick(num) {
-        // 숫자패드로 할인액 직접 조정 (간단 예시)
-        discount = parseInt(discount.toString() + num);
-        updateDisplay();
-    }
-
-    function openModal(method) {
-        currentMethod = method;
-        const modal = document.getElementById('paymentModal');
-        const title = document.getElementById('modalTitle');
-        const msg = document.getElementById('modalMsg');
-        const input = document.getElementById('paymentInput');
+    <!-- JAVASCRIPT SYSTEM ENGINE -->
+    <script>
+        lucide.createIcons();
+        const menuBtn = document.getElementById('menuBtn'), sidebarMenu = document.getElementById('sidebarMenu');
+        const pageSopang = document.getElementById('pageSopang'), pageReserve = document.getElementById('pageReserve'), pageQast = document.getElementById('pageQast');
+        const cartCount = document.getElementById('cartCount'), cartToast = document.getElementById('cartToast'), productGrid = document.getElementById('productGrid');
+        const cartDrawer = document.getElementById('cartDrawer'), drawerQty = document.getElementById('drawerQty'), drawerSubtotal = document.getElementById('drawerSubtotal'), drawerTotal = document.getElementById('drawerTotal'), drawerDiscountRow = document.getElementById('drawerDiscountRow');
+        const swipeContainer = document.getElementById('swipeContainer'), swipeSlider = document.getElementById('swipeSlider'), swipeBg = document.getElementById('swipeBg'), swipeText = document.getElementById('swipeText');
+        const termsModal = document.getElementById('termsModal'), modalTitle = document.getElementById('modalTitle'), modalContent = document.getElementById('modalContent');
+        const downloadCouponBtn = document.getElementById('downloadCouponBtn'), couponBtnText = document.getElementById('couponBtnText'), drawerCouponSection = document.getElementById('drawerCouponSection'), applyCouponCheckbox = document.getElementById('applyCouponCheckbox');
+        const toastMessage = document.getElementById('toastMessage');
+        const closeCartBtn = document.getElementById('closeCartBtn');
         
-        modal.style.display = 'flex';
-        input.value = '';
+        let cartItemCount = 0;
+        let totalAccumulatedPrice = 0;
+        let hasCoupon = false;
+        let isCouponApplied = false;
+        let isProcessingPayment = false;
 
-        if(method === '현금') {
-            title.innerText = "현금 결제";
-            msg.innerText = "전화번호가 무엇입니까?";
-        } else if(method === '카드') {
-            title.innerText = "카드 결제";
-            msg.innerText = "카드 번호가 무엇입니까?";
-        } else {
-            title.innerText = "계좌 이체";
-            msg.innerText = "계좌번호: 123-456-789 (은행명)\n보내실 금액을 입력하세요.";
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); sidebarMenu.classList.toggle('hidden'); });
+        document.addEventListener('click', () => sidebarMenu.classList.add('hidden'));
+
+        function switchPage(p) {
+            sidebarMenu.classList.add('hidden');
+            pageSopang.classList.toggle('hidden', p !== 'sopang');
+            pageReserve.classList.toggle('hidden', p !== 'reserve');
+            pageQast.classList.toggle('hidden', p !== 'qast');
+            closeCartView();
         }
-    }
 
-    function closeModal() {
-        document.getElementById('paymentModal').style.display = 'none';
-    }
-
-    function processPayment() {
-        const val = document.getElementById('paymentInput').value;
-        if(!val && currentMethod !== '이체') {
-            alert("번호를 입력해주세요.");
-            return;
+        // Coupon Logic
+        function downloadCoupon() {
+            if (hasCoupon) return;
+            hasCoupon = true;
+            downloadCouponBtn.className = "bg-neutral-800 text-neutral-500 font-bold text-[11px] px-3 py-1.5 rounded-lg cursor-not-allowed";
+            couponBtnText.textContent = "발급 완료";
+            drawerCouponSection.classList.remove('hidden');
+            
+            toastMessage.textContent = "🎉 5,000원 할인 쿠폰이 발급되었습니다!";
+            cartToast.classList.remove('opacity-0', 'translate-y-2');
+            cartToast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                cartToast.classList.remove('opacity-100', 'translate-y-0');
+                cartToast.classList.add('opacity-0', 'translate-y-2');
+            }, 1500);
         }
-        alert("결제가 완료되었습니다.");
-        location.reload(); // 초기화
-    }
-</script>
 
+        function toggleCouponApply() {
+            isCouponApplied = applyCouponCheckbox.checked;
+            drawerDiscountRow.classList.toggle('hidden', !isCouponApplied);
+            updatePriceDisplay();
+        }
+
+        function updatePriceDisplay() {
+            drawerQty.textContent = `${cartItemCount}개`;
+            drawerSubtotal.textContent = `${totalAccumulatedPrice.toLocaleString()}원`;
+            
+            let finalPrice = totalAccumulatedPrice;
+            if (isCouponApplied) {
+                finalPrice = Math.max(0, totalAccumulatedPrice - 5000);
+            }
+            drawerTotal.textContent = `${finalPrice.toLocaleString()}원`;
+        }
+
+        // Add Product To Cart Logic
+        function addToCart(price) {
+            cartItemCount++;
+            totalAccumulatedPrice += price;
+            
+            cartCount.textContent = cartItemCount;
+            cartCount.classList.remove('hidden');
+            
+            updatePriceDisplay();
+
+            toastMessage.textContent = "장바구니가 담겼습니다!";
+            cartToast.classList.remove('opacity-0', 'translate-y-2');
+            cartToast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                cartToast.classList.remove('opacity-100', 'translate-y-0');
+                cartToast.classList.add('opacity-0', 'translate-y-2');
+            }, 1000);
+        }
+
+        function openCartView() {
+            cartDrawer.classList.remove('hidden', 'translate-y-full');
+            cartDrawer.classList.add('translate-y-0');
+            
+            isProcessingPayment = false;
+            swipeSlider.disabled = false;
+            swipeSlider.value = 0;
+            swipeBg.style.width = "0%";
+            swipeContainer.classList.remove('bg-emerald-900', 'border-emerald-500');
+            swipeContainer.classList.add('bg-neutral-900', 'border-neutral-800');
+            
+            if (cartItemCount === 0) {
+                swipeText.textContent = "🔒 상품을 장바구니에 담아주세요";
+                swipeSlider.disabled = true;
+            } else {
+                swipeText.textContent = "👉 오른쪽으로 밀어서 결제하기";
+            }
+            swipeText.className = "absolute text-xs font-bold text-neutral-400 tracking-wide pointer-events-none z-10 animate-pulse";
+        }
+
+        function closeModal() { termsModal.classList.add('hidden'); }
+        
+        // 확실하게 닫기 함수 정의
+        function closeCartView() { 
+            cartDrawer.classList.remove('translate-y-0');
+            cartDrawer.classList.add('translate-y-full'); 
+        }
+
+        // 보강: 닫기 버튼 전용 클릭 리스너 이벤트 명시적 바인딩
+        if (closeCartBtn) {
+            closeCartBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeCartView();
+            });
+        }
+
+        // SLIDER INTERACTION
+        swipeSlider.addEventListener('input', (e) => {
+            if (cartItemCount === 0 || isProcessingPayment) return;
+            const val = e.target.value;
+            swipeBg.style.width = `${val}%`;
+            
+            if (val > 85) {
+                swipeText.textContent = "놓으면 즉시 주문완료! 🚀";
+            } else {
+                swipeText.textContent = "👉 오른쪽으로 밀어서 결제하기";
+            }
+        });
+
+        const finalizeSwipe = () => {
+            if (cartItemCount === 0 || isProcessingPayment) return;
+            const val = parseInt(swipeSlider.value);
+            
+            if(val >= 85) {
+                isProcessingPayment = true;
+                swipeSlider.value = 100;
+                swipeBg.style.width = "100%";
+                swipeText.textContent = "✅ 주문이 완료되었습니다!";
+                swipeText.className = "absolute text-xs font-black text-white tracking-widest pointer-events-none z-10";
+                swipeSlider.disabled = true;
+                
+                swipeContainer.classList.remove('bg-neutral-900', 'border-neutral-800');
+                swipeContainer.classList.add('bg-emerald-600', 'border-emerald-500');
+                
+                let payPrice = totalAccumulatedPrice;
+                if (isCouponApplied) payPrice = Math.max(0, totalAccumulatedPrice - 5000);
+
+                setTimeout(() => {
+                    alert(`💳 [EJON 로켓완료] 총 ${payPrice.toLocaleString()}원 카드 결제가 정상 완료되었습니다!`);
+                    cartItemCount = 0; totalAccumulatedPrice = 0;
+                    applyCouponCheckbox.checked = false;
+                    isCouponApplied = false;
+                    drawerDiscountRow.classList.add('hidden');
+                    cartCount.classList.add('hidden');
+                    updatePriceDisplay();
+                    closeCartView();
+                }, 250);
+            } else {
+                swipeSlider.value = 0;
+                swipeBg.style.width = "0%";
+                swipeText.textContent = "👉 오른쪽으로 밀어서 결제하기";
+            }
+        };
+
+        swipeSlider.addEventListener('change', finalizeSwipe);
+        swipeSlider.addEventListener('touchend', finalizeSwipe);
+        swipeSlider.addEventListener('mouseup', finalizeSwipe);
+
+        // Member Reservation Form Handle
+        function submitReservation(e) {
+            e.preventDefault();
+            document.getElementById('reserveForm').classList.add('hidden');
+            document.getElementById('reserveSuccessCard').classList.remove('hidden');
+        }
+
+        function filterCat(cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => { b.className = "cat-btn bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded text-xs whitespace-nowrap"; });
+            event.currentTarget.className = "cat-btn bg-[#0073e6] text-white px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap";
+            document.querySelectorAll('.p-card').forEach(c => {
+                c.style.display = (cat === 'all' || c.getAttribute('data-cat') === cat) ? 'flex' : 'none';
+            });
+        }
+
+        const textDatabase = {
+            terms: `<h4 class='font-bold text-white'>제 1조 (목적)</h4><p>본 약관은 EJON 로켓몰 가입 조건에 동의한 회원들을 대상으로 서비스를 통합 제공하는 것을 규정합니다.</p>`,
+            privacy: `<h4 class='font-bold text-white'>1. 수집하는 정보항목 및 연령 규정</h4><p>회사는 개인정보 데이터를 철저히 암호화 조치합니다. [RRN Omitted] 가이드라인에 따라 중요 매칭 인덱스는 식별할 수 없도록 마스킹 처리됩니다.</p>`,
+            wow: `<h4 class='font-bold text-white'>로켓와우 무료체험 특약</h4><p>와우회원은 5,000가지가 넘는 농가 직송 신선 식품군에 대해 무료 배송을 받습니다.</p>`
+        };
+
+        function openModal(t) {
+            modalTitle.textContent = t === 'terms' ? "서비스 이용약관" : t === 'privacy' ? "개인정보처리방침" : "로켓와우 멤버십 약관";
+            modalContent.innerHTML = textDatabase[t];
+            termsModal.classList.remove('hidden');
+        }
+
+        const dataConfig = [
+            { id: 'fruit', em: ['🍉','🍊','🍎','🍓'], pr: ['당도최상', '로켓프레시'], nm: ['수박', '밀감', '부사사과', '설향딸기'] },
+            { id: 'snack', em: ['🍪','🍿','🍫'], pr: ['바삭바삭', '단짝특가'], nm: ['초코칩칩', '치즈칩칩', '스윗혼팝콘'] },
+            { id: 'baby', em: ['🥣','🍼'], pr: ['친환경인증', '영양설계'], nm: ['유기농 한우미음', '첫단계 고구마퓨레'] },
+            { id: 'etc', em: ['🥤','📦'], pr: ['초저가특가', '인기템'], nm: ['천연 미네랄워터', '다목적 종이컵세트'] }
+        ];
+
+        function initStore() {
+            const frag = document.createDocumentFragment();
+            for(let i=1; i<=5000; i++) {
+                const conf = dataConfig[i % dataConfig.length];
+                const pfx = conf.pr[Math.floor(Math.random() * conf.pr.length)];
+                const itemNm = conf.nm[Math.floor(Math.random() * conf.nm.length)];
+                const emo = conf.em[Math.floor(Math.random() * conf.em.length)];
+                const price = (Math.floor(Math.random() * 10) * 500) + 1500;
+
+                const card = document.createElement('div');
+                card.className = 'p-card bg-neutral-900 border border-neutral-800 rounded-xl p-3 flex flex-col justify-between transition hover:border-neutral-700';
+                card.setAttribute('data-cat', conf.id);
+                card.innerHTML = `
+                    <div>
+                        <div class="w-full aspect-square bg-neutral-800 rounded flex items-center justify-center text-xl mb-1.5">${emo}</div>
+                        <div class="text-[10px] text-[#00b0f0] font-bold">🚀 와우배송</div>
+                        <h3 class="font-medium text-white text-[11px] line-clamp-2 mt-0.5">[${pfx}] ${itemNm} ${i}번</h3>
+                        <p class="text-red-500 font-extrabold text-xs mt-0.5">${price.toLocaleString()}원</p>
+                    </div>
+                    <button onclick="addToCart(${price})" class="mt-2 w-full bg-[#0073e6] hover:bg-[#0062c4] text-white font-bold py-1 rounded text-[10px] flex items-center justify-center gap-1">
+                        <i data-lucide="shopping-cart" class="w-2.5 h-2.5"></i> 담기
+                    </button>
+                `;
+                frag.appendChild(card);
+            }
+            productGrid.appendChild(frag);
+            lucide.createIcons();
+        }
+        initStore();
+    </script>
 </body>
 </html>
